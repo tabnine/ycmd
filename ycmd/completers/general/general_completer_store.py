@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with ycmd.  If not, see <http://www.gnu.org/licenses/>.
 
+from importlib import import_module
+from ycmd import responses
 from ycmd.completers.completer import Completer
 from ycmd.completers.all.identifier_completer import IdentifierCompleter
+from ycmd.completers.general.tabnine_completer import TabnineCompleter 
 from ycmd.completers.general.filename_completer import FilenameCompleter
 from ycmd.completers.general.ultisnips_completer import UltiSnipsCompleter
-
 
 class GeneralCompleterStore( Completer ):
   """
@@ -34,13 +36,14 @@ class GeneralCompleterStore( Completer ):
     self._identifier_completer = IdentifierCompleter( user_options )
     self._filename_completer = FilenameCompleter( user_options )
     self._ultisnips_completer = UltiSnipsCompleter( user_options )
-    self._non_filename_completers = [ self._identifier_completer ]
+    self._tabnine_completer = TabnineCompleter( user_options )
+    self._non_filename_completers = [ self._tabnine_completer, self._identifier_completer ]
     if user_options.get( 'use_ultisnips_completer', True ):
       self._non_filename_completers.append( self._ultisnips_completer )
-    self._all_completers = [ self._identifier_completer,
+    self._all_completers = [ self._tabnine_completer,
+                             self._identifier_completer,
                              self._filename_completer,
                              self._ultisnips_completer ]
-
 
   def SupportedFiletypes( self ):
     return set()

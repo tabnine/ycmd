@@ -1,0 +1,22 @@
+name: Daily Sync Fork
+
+on:
+  schedule:
+    - cron:  '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync_with_upstream:
+    runs-on: ubuntu-latest
+    name: Sync master with upstream latest
+
+    steps:
+    - name: Checkout main
+      uses: actions/checkout@v2
+      
+    - name: Fork Sync
+      uses: tgymnich/fork-sync@v1.2.1
+      with:
+        owner: ycm-core
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        pr_title: Fork updates from ycm-core/ycmd master
