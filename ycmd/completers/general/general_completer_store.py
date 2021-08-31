@@ -19,9 +19,9 @@ from importlib import import_module
 from ycmd import responses
 from ycmd.completers.completer import Completer
 from ycmd.completers.all.identifier_completer import IdentifierCompleter
+from ycmd.completers.general.tabnine_completer import TabnineCompleter 
 from ycmd.completers.general.filename_completer import FilenameCompleter
 from ycmd.completers.general.ultisnips_completer import UltiSnipsCompleter
-
 
 class GeneralCompleterStore( Completer ):
   """
@@ -44,17 +44,6 @@ class GeneralCompleterStore( Completer ):
                              self._identifier_completer,
                              self._filename_completer,
                              self._ultisnips_completer ]
-
-  def _GetGeneralCompleters( self, user_options ):
-    general_completers = []
-    for general_completer in user_options.get( 'general_completers' ):
-      try:
-        module = import_module( general_completer.get( 'module' ) )
-        completer = module.GetCompleter( user_options )
-        general_completers.append( completer )
-      except ImportError:
-        pass
-    return general_completers
 
   def SupportedFiletypes( self ):
     return set()
