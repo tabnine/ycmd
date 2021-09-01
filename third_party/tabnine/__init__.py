@@ -78,7 +78,7 @@ class Tabnine(object):
             [
                 path,
                 "--client",
-                "vim-ycmd",
+                "vim-ycm",
                 "--log-file-path",
                 os.path.join(self._install_dir, "tabnine.log"),
                 "--client-metadata",

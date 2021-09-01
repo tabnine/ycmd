@@ -1,7 +1,8 @@
+import os
 from ycmd import responses
 from ycmd.completers.general_completer import GeneralCompleter
 from ycmd.completers import completer_utils
-from ycmd.utils import LOGGER, re, SplitLines
+from ycmd.utils import SplitLines
 from third_party.tabnine import Tabnine
 
 
@@ -104,7 +105,7 @@ class TabnineCompleter(GeneralCompleter):
 
         # Before calculations
         for line in lines[: line_num - 1]:
-            before_text += line
+            before_text += os.linesep + line
             before_offset += len(line) + 1
 
         last_line = lines[line_num - 1]
@@ -118,7 +119,7 @@ class TabnineCompleter(GeneralCompleter):
 
         after_offset += len(last_line[column_num:])
         for line in lines[line_num:]:
-            after_text += line
+            after_text += os.linesep + line
             after_offset += len(line) + 1
 
         return (
