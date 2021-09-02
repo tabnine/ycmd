@@ -229,6 +229,10 @@ def GetDetailedDiagnostic():
 
   return _JsonResponse( completer.GetDetailedDiagnostic( request_data ) )
 
+@app.post( '/open_tabnine_hub' )
+def OpenTabnineHub():
+    tabnine_completer = _server_state.GetGeneralCompleter().GetTabnineCompleter()
+    tabnine_completer.OpenTabnineHub()
 
 @app.post( '/load_extra_conf_file' )
 def LoadExtraConfFile():

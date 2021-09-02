@@ -133,5 +133,5 @@ class TabnineCompleter(GeneralCompleter):
         self._completions_cache.Update(request_data, raw_completions)
         return raw_completions
 
-    def _OpenHubCommands(self):
+    def OpenTabnineHub(self):
         self._tabnine.configuration({})

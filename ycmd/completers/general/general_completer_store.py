@@ -52,6 +52,8 @@ class GeneralCompleterStore( Completer ):
   def GetIdentifierCompleter( self ):
     return self._identifier_completer
 
+  def GetTabnineCompleter( self ):
+    return self._tabnine_completer
 
   def ComputeCandidates( self, request_data ):
     candidates = self._filename_completer.ComputeCandidates( request_data )
