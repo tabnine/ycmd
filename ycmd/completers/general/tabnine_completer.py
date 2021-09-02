@@ -70,8 +70,8 @@ class TabnineCompleter(GeneralCompleter):
             region_includes_end = after.GetOffset() == len(file_data["contents"])
 
             request = {
-                "before": before.GetText(),
-                "after": after.GetText(),
+                "before": before.GetText()[:CHAR_LIMIT],
+                "after": after.GetText()[:CHAR_LIMIT],
                 "filename": file_name,
                 "max_num_results": MAX_NUM_RESULTS,
                 "region_includes_beginning": region_includes_beginning,
