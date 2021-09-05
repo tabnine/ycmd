@@ -82,7 +82,7 @@ class TabnineCompleter(GeneralCompleter):
 
             if response is not None:
                 completions += [
-                    result.get("new_prefix") for result in response.get("results")
+                    result.get("new_prefix").replace("\n","⏎") for result in response.get("results")
                 ]
 
         return [
