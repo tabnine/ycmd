@@ -92,7 +92,7 @@ jobs:
     - name: Install Python
       uses: deadsnakes/action@v2.1.1
       with:
-        python-version: 3.9
+        python-version: '3.10'
         debug: true
     - name: Install GCC
       run: |
@@ -124,15 +124,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ windows-2019 ]
+        runs-on: [ windows-2022 ]
         benchmark: [ true, false ]
         python-arch: [ 'x64', 'x86' ]
-        msvc: [ 16 ]
+        msvc: [ 17 ]
         exclude:
-          - runs-on: windows-2019
+          - runs-on: windows-2022
             benchmark: true
             python-arch: 'x86'
         include:
+          - runs-on: windows-2019
+            benchmark: false
+            python-arch: 'x64'
+            msvc: 16
           - runs-on: windows-2016
             benchmark: false
             python-arch: 'x64'
@@ -156,7 +160,7 @@ jobs:
     - name: Install Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: '3.10'
         architecture: ${{ matrix.python-arch }}
     - name: Install Go
       if: matrix.benchmark == false
