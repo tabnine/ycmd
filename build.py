@@ -89,10 +89,10 @@ DYNAMIC_PYTHON_LIBRARY_REGEX = """
   )$
 """
 
-JDTLS_MILESTONE = '0.68.0'
-JDTLS_BUILD_STAMP = '202101202016'
+JDTLS_MILESTONE = '1.6.0'
+JDTLS_BUILD_STAMP = '202110200520'
 JDTLS_SHA256 = (
-  'df9c9b497ce86b1d57756b2292ad0f7bfaa76aed8a4b63a31c589e85018b7993'
+  '09650af5c9dc39f0b40981bcdaa2170cbbc5bb003ac90cdb07fbb57381ac47b2'
 )
 
 RUST_TOOLCHAIN = 'nightly-2021-10-26'
@@ -807,44 +807,44 @@ def GetCsCompleterDataForPlatform():
   ####################################
   DATA = {
     'win32': {
-      'version': 'v1.35.4',
+      'version': 'v1.37.11',
       'download_url': ( 'https://github.com/OmniSharp/omnisharp-roslyn/release'
-                        's/download/v1.35.4/omnisharp.http-win-x86.zip' ),
+                        's/download/v1.37.11/omnisharp.http-win-x86.zip' ),
       'file_name': 'omnisharp.http-win-x86.zip',
-      'check_sum': ( 'f6a44ec4e9edfbb4cb13626b09859d3dcd9b92e202f00b484d3c5956'
-                     '4dfa236b' ),
+      'check_sum': ( '461544056b144c97e8413de8c1aa1ddd9e2902f5a9f2223af8046d65'
+                     '4d95f2a0' ),
     },
     'win64': {
-      'version': 'v1.35.4',
+      'version': 'v1.37.11',
       'download_url': ( 'https://github.com/OmniSharp/omnisharp-roslyn/release'
-                        's/download/v1.35.4/omnisharp.http-win-x64.zip' ),
+                        's/download/v1.37.11/omnisharp.http-win-x64.zip' ),
       'file_name': 'omnisharp.http-win-x64.zip',
-      'check_sum': ( '18ea074d099592c211929754cbc616e9b640b4143d60b20b374e015b'
-                     '97932703' ),
+      'check_sum': ( '7f6f0abfac00d028b90aaf1f56813e4fbb73d84bdf2c4704862aa976'
+                     '1b61a59c' ),
     },
     'macos': {
-      'version': 'v1.35.4',
+      'version': 'v1.37.11',
       'download_url': ( 'https://github.com/OmniSharp/omnisharp-roslyn/release'
-                        's/download/v1.35.4/omnisharp.http-osx.tar.gz' ),
+                        's/download/v1.37.11/omnisharp.http-osx.tar.gz' ),
       'file_name': 'omnisharp.http-osx.tar.gz',
-      'check_sum': ( '5e7e4870605ea53c1588d6a11e31a277b062b29477c3486d43a3c609'
-                     '99f1cae8' ),
+      'check_sum': ( '84b84a8a3cb8fd3986ea795d9230457c43bf130b482fcb77fef57c67'
+                     'e151828a' ),
     },
     'linux32': {
-      'version': 'v1.35.4',
+      'version': 'v1.37.11',
       'download_url': ( 'https://github.com/OmniSharp/omnisharp-roslyn/release'
-                        's/download/v1.35.4/omnisharp.http-linux-x86.tar.gz' ),
+                        's/download/v1.37.11/omnisharp.http-linux-x86.tar.gz' ),
       'file_name': 'omnisharp.http-linux-x86.tar.gz',
-      'check_sum': ( '5998daa508e79e2e1f1bbf018ef59a7b82420506cb6fa3fa75a54248'
-                     '94f89c19' ),
+      'check_sum': ( 'a5ab39380a5d230c75f08bf552980cdc5bd8c31a43348acbfa66f1f4'
+                     '6f12851f' ),
     },
     'linux64': {
-      'version': 'v1.35.4',
+      'version': 'v1.37.11',
       'download_url': ( 'https://github.com/OmniSharp/omnisharp-roslyn/release'
-                        's/download/v1.35.4/omnisharp.http-linux-x64.tar.gz' ),
+                        's/download/v1.37.11/omnisharp.http-linux-x64.tar.gz' ),
       'file_name': 'omnisharp.http-linux-x64.tar.gz',
-      'check_sum': ( 'a1b89e5cb67afedfc17515eae565c58a31c36d660dde7f15e4de4ef8'
-                     '5e464b1c' ),
+      'check_sum': ( '9a6e9a246babd777229eebb57f0bee86e7ef5da271c67275eae5ed9d'
+                     '7b0ad563' ),
     },
   }
   if OnWindows():
@@ -1052,32 +1052,36 @@ def GetClangdTarget():
   if OnWindows():
     return [
       ( 'clangd-{version}-win64',
-        'a9f84b169c53fe27c70f01fc5981f448a67e8507543b759a6d3067f1c71e6525' ),
+        'ca4c9b7c0350a936e921b3e3dc6bdd51a6e905d65eac26b23ede7774158d2305' ),
       ( 'clangd-{version}-win32',
-        'b89a00ee761a56ff187d6960435d9fe4f087c0e2f3f59e68bbce629a51faf48a' ) ]
+        'a2eab3a4b23b700a16b9ef3e6b5b122438fcf016ade88dd8e10d1f81bde9386e' ) ]
   if OnMac():
+    if OnArm():
+      return [
+        ( 'clangd-{version}-arm64-apple-darwin',
+          '68be75dbe52893cba5d75486e598e51032f7f67b24c748655aace932152d4421' ) ]
     return [
       ( 'clangd-{version}-x86_64-apple-darwin',
-        '113f2e8940f9bcc49e150b233e8ed1119eaedf2e026c80551d719c6cf22b2ec8' ) ]
+        'eacbe2d7df6e57e6053f60be798e9f64d3e57556a0b2c58cf0c5599fdf9e793d' ) ]
   if OnFreeBSD():
     return [
       ( 'clangd-{version}-amd64-unknown-freebsd13',
-        '3e002c0d02eec5cd20cd632352b137d40d0f0ec3c705ddc43c9abfb5510ed665' ),
+        'bc6a11bd22251f4996290384baa59854b88537ce9105da2c64d0c70992cc548b' ),
       ( 'clangd-{version}-i386-unknown-freebsd13',
-        '2f9564a67ce4bd981505db0035512d0bddf4d9c1abc02613edcfb2422e4807ad' ) ]
+        '5ea931ca15b02c667fc3ad4d08266447b8212a83b43c80e644e3989645d63e2b' ) ]
   if OnAArch64():
     return [
       ( 'clangd-{version}-aarch64-linux-gnu',
-        'd6c6b7c94df88b15b465b66593e40c114053871e386d99cae0166e405df269ab' ) ]
+        'f0e9cea316217a40298d48ef81198ac1b41e6686fc7f7631a6ce54dd75a6989e' ) ]
   if OnArm():
     return [
       None, # First list index is for 64bit archives. ARMv7 is 32bit only.
       ( 'clangd-{version}-armv7a-linux-gnueabihf',
-        '9201d5f5466ac45192ad382cf9624f9a9a578b97ed0e8daa9c77dc6e04665e7a' ) ]
+        'bb52085decd18621f5c15b884dde6a327e3193b69bfc4b3a49c5f4459242e522' ) ]
   if OnX86_64():
     return [
       ( 'clangd-{version}-x86_64-unknown-linux-gnu',
-        'dc0e073a7e57562f6811a70349ff7f05afbb5c151e1e306215c2fc31c468944c' ) ]
+        '10a64c468d1dd2a384e0e5fd4eb2582fd9f1dfa706b6d2d2bb88fb0fbfc2718d' ) ]
   raise InstallationFailed(
     CLANGD_BINARIES_ERROR_MESSAGE.format( version = CLANGD_VERSION,
                                           platform = 'this system' ) )
@@ -1200,9 +1204,10 @@ def PrintReRunMessage():
          'adding the --verbose flag. If you think this is a bug and you '
          'raise an issue, you MUST include the *full verbose* output.',
          '',
-         'For example, run:' + shlex.join( [ sys.executable ] +
-                                           sys.argv +
-                                           [ '--verbose' ] ),
+         'For example, run:' + ' '.join( shlex.quote( arg )
+                                         for arg in [ sys.executable ] +
+                                                    sys.argv +
+                                                    [ '--verbose' ] ),
          '',
          file = sys.stderr,
          sep = '\n' )
