@@ -89,13 +89,13 @@ DYNAMIC_PYTHON_LIBRARY_REGEX = """
   )$
 """
 
-JDTLS_MILESTONE = '1.6.0'
-JDTLS_BUILD_STAMP = '202110200520'
+JDTLS_MILESTONE = '1.14.0'
+JDTLS_BUILD_STAMP = '202207211651'
 JDTLS_SHA256 = (
-  '09650af5c9dc39f0b40981bcdaa2170cbbc5bb003ac90cdb07fbb57381ac47b2'
+  '4978ee235049ecba9c65b180b69ef982eedd2f79dc4fd1781610f17939ecd159'
 )
 
-RUST_TOOLCHAIN = 'nightly-2021-10-26'
+RUST_TOOLCHAIN = 'nightly-2022-08-17'
 RUST_ANALYZER_DIR = p.join( DIR_OF_THIRD_PARTY, 'rust-analyzer' )
 
 BUILD_ERROR_MESSAGE = (
@@ -107,12 +107,70 @@ BUILD_ERROR_MESSAGE = (
   'issue tracker, including the entire output of this script (with --verbose) '
   'and the invocation line used to run it.' )
 
-CLANGD_VERSION = '13.0.0'
+CLANGD_VERSION = '14.0.0'
 CLANGD_BINARIES_ERROR_MESSAGE = (
   'No prebuilt Clang {version} binaries for {platform}. '
   'You\'ll have to compile Clangd {version} from source '
   'or use your system Clangd. '
   'See the YCM docs for details on how to use a custom Clangd.' )
+
+
+def FindLatestMSVC( quiet ):
+  ACCEPTABLE_VERSIONS = [ 17, 16, 15 ]
+
+  VSWHERE_EXE = os.path.join( os.environ[ 'ProgramFiles(x86)' ],
+                             'Microsoft Visual Studio',
+                             'Installer', 'vswhere.exe' )
+
+  if os.path.exists( VSWHERE_EXE ):
+    if not quiet:
+      print( "Calling vswhere -latest -installationVersion" )
+    latest_full_v = subprocess.check_output(
+      [ VSWHERE_EXE, '-latest', '-property', 'installationVersion' ]
+    ).strip().decode()
+    if '.' in latest_full_v:
+      try:
+        latest_v = int( latest_full_v.split( '.' )[ 0 ] )
+      except ValueError:
+        raise ValueError( f"{latest_full_v} is not a version number." )
+
+      if not quiet:
+        print( f'vswhere -latest returned version {latest_full_v}' )
+
+      if latest_v not in ACCEPTABLE_VERSIONS:
+        if latest_v > 17:
+          if not quiet:
+            print( f'MSVC Version {latest_full_v} is newer than expected.' )
+        else:
+          raise ValueError(
+            f'vswhere returned {latest_full_v} which is unexpected.'
+            'Pass --msvc <version> argument.' )
+      return latest_v
+    else:
+      if not quiet:
+        print( f'vswhere returned nothing usable, {latest_full_v}' )
+
+  # Fall back to registry parsing, which works at least until MSVC 2019 (16)
+  # but is likely failing on MSVC 2022 (17)
+  if not quiet:
+    print( "vswhere method failed, falling back to searching the registry" )
+
+  import winreg
+  handle = winreg.ConnectRegistry( None, winreg.HKEY_LOCAL_MACHINE )
+  msvc = None
+  for i in ACCEPTABLE_VERSIONS:
+    if not quiet:
+      print( 'Trying to find '
+             rf'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\{i}.0' )
+    try:
+      winreg.OpenKey( handle, rf'SOFTWARE\Microsoft\VisualStudio\{i}.0' )
+      if not quiet:
+        print( f"Found MSVC version {i}" )
+      msvc = i
+      break
+    except FileNotFoundError:
+      pass
+  return msvc
 
 
 def RemoveDirectory( directory ):
@@ -292,6 +350,7 @@ def GetPossiblePythonLibraryDirectories():
   return [
     sysconfig.get_config_var( 'LIBPL' ),
     p.join( prefix, 'lib64' ),
+    p.join( prefix, 'lib/64' ),
     p.join( prefix, 'lib' )
   ]
 
@@ -408,9 +467,11 @@ def ParseArguments():
   parser.add_argument( '--system-libclang', action = 'store_true',
                        help = 'Use system libclang instead of downloading one '
                        'from llvm.org. NOT RECOMMENDED OR SUPPORTED!' )
-  parser.add_argument( '--msvc', type = int, choices = [ 15, 16, 17 ],
-                       default = 16, help = 'Choose the Microsoft Visual '
-                       'Studio version (default: %(default)s).' )
+  if OnWindows():
+    parser.add_argument( '--msvc', type = int, choices = [ 15, 16, 17 ],
+                          default=None,
+                          help= 'Choose the Microsoft Visual Studio version '
+                                '(default: %(default)s).' )
   parser.add_argument( '--ninja', action = 'store_true',
                        help = 'Use Ninja build system.' )
   parser.add_argument( '--all',
@@ -488,6 +549,11 @@ def ParseArguments():
   if not OnWindows() and args.enable_coverage:
     # We always want a debug build when running with coverage enabled
     args.enable_debug = True
+
+  if OnWindows() and args.msvc is None:
+    args.msvc = FindLatestMSVC( args.quiet )
+    if args.msvc is None:
+      raise FileNotFoundError( "Could not find a valid MSVC version." )
 
   if args.core_tests:
     os.environ[ 'YCM_TESTRUN' ] = '1'
@@ -867,7 +933,7 @@ def EnableGoCompleter( args ):
   new_env.pop( 'GOROOT', None )
   new_env[ 'GOBIN' ] = p.join( new_env[ 'GOPATH' ], 'bin' )
 
-  gopls = 'golang.org/x/tools/gopls@v0.7.1'
+  gopls = 'golang.org/x/tools/gopls@v0.9.4'
   CheckCall( [ go, 'install', gopls ],
              env = new_env,
              quiet = args.quiet,
@@ -1003,7 +1069,7 @@ def EnableJavaCompleter( switches ):
     sys.stdout.write( 'Installing jdt.ls for Java support...' )
     sys.stdout.flush()
 
-  CheckJavaVersion( 11 )
+  CheckJavaVersion( 17 )
 
   TARGET = p.join( DIR_OF_THIRD_PARTY, 'eclipse.jdt.ls', 'target', )
   REPOSITORY = p.join( TARGET, 'repository' )
@@ -1062,36 +1128,36 @@ def GetClangdTarget():
   if OnWindows():
     return [
       ( 'clangd-{version}-win64',
-        'ca4c9b7c0350a936e921b3e3dc6bdd51a6e905d65eac26b23ede7774158d2305' ),
+        '529c5b782d926536aedcb2d7a3c8a813fa05ada9193ec4119b28deb3f83634b2' ),
       ( 'clangd-{version}-win32',
-        'a2eab3a4b23b700a16b9ef3e6b5b122438fcf016ade88dd8e10d1f81bde9386e' ) ]
+        '6c7f0985370ebede0f61ff66a1b4886079f199bc346c2baa941de9ad76e907a7' ) ]
   if OnMac():
     if OnArm():
       return [
         ( 'clangd-{version}-arm64-apple-darwin',
-          '68be75dbe52893cba5d75486e598e51032f7f67b24c748655aace932152d4421' ) ]
+          '6b4bed9378a9ac3d84720dbcf76e4c60b0afc27567d42d7837f9da8b039d13c5' ) ]
     return [
       ( 'clangd-{version}-x86_64-apple-darwin',
-        'eacbe2d7df6e57e6053f60be798e9f64d3e57556a0b2c58cf0c5599fdf9e793d' ) ]
+        '867342cffc04ab3c1936121ed643e07df666119afad6518835a26306db8767ce' ) ]
   if OnFreeBSD():
     return [
       ( 'clangd-{version}-amd64-unknown-freebsd13',
-        'bc6a11bd22251f4996290384baa59854b88537ce9105da2c64d0c70992cc548b' ),
+        '5db1f95eea87d216d7a7490c207918962cddfdee6387594f6f6043ae21dde22f' ),
       ( 'clangd-{version}-i386-unknown-freebsd13',
-        '5ea931ca15b02c667fc3ad4d08266447b8212a83b43c80e644e3989645d63e2b' ) ]
+        'b9f6d0be1476dfb71ee16d12639b7fe425dc90097d81fbf2bdd0cb7248338ca2' ) ]
   if OnAArch64():
     return [
       ( 'clangd-{version}-aarch64-linux-gnu',
-        'f0e9cea316217a40298d48ef81198ac1b41e6686fc7f7631a6ce54dd75a6989e' ) ]
+        'c5e2ac2f9381f6c1bf2305af0458360160a86c8dbd369c923a71c673f391142d' ) ]
   if OnArm():
     return [
       None, # First list index is for 64bit archives. ARMv7 is 32bit only.
       ( 'clangd-{version}-armv7a-linux-gnueabihf',
-        'bb52085decd18621f5c15b884dde6a327e3193b69bfc4b3a49c5f4459242e522' ) ]
+        '86b4582d551b8d5558b4bdd1060fbb3ec9ae4e0c7c6f9489db1a4088f5e71ef3' ) ]
   if OnX86_64():
     return [
       ( 'clangd-{version}-x86_64-unknown-linux-gnu',
-        '10a64c468d1dd2a384e0e5fd4eb2582fd9f1dfa706b6d2d2bb88fb0fbfc2718d' ) ]
+        '9c17b5550ba927aa3f661300b4258109d3a23aecdd97fef81185d0d0b5529d36' ) ]
   raise InstallationFailed(
     CLANGD_BINARIES_ERROR_MESSAGE.format( version = CLANGD_VERSION,
                                           platform = 'this system' ) )

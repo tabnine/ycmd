@@ -20,6 +20,7 @@ import os
 from hamcrest import ( assert_that,
                        calling,
                        contains_exactly,
+                       matches_regexp,
                        empty,
                        equal_to,
                        raises )
@@ -30,7 +31,7 @@ from types import ModuleType
 from ycmd.completers.cpp import flags
 from ycmd.completers.cpp.flags import ShouldAllowWinStyleFlags, INCLUDE_FLAGS
 from ycmd.tests.test_utils import ( MacOnly, TemporaryTestDir, WindowsOnly,
-                                    TemporaryClangProject )
+                                    TemporaryClangProject, UnixOnly )
 from ycmd.tests.clang import setUpModule # noqa
 from ycmd.utils import CLANG_RESOURCE_DIR
 from ycmd.responses import NoExtraConfDetected
@@ -1421,10 +1422,10 @@ class FlagsTest( TestCase ):
             add_extra_clang_flags = False ),
           contains_exactly(
             contains_exactly( 'clang++',
-                      '-x',
-                      'c++',
-                      '--driver-mode=g++',
-                      '-Wall' ),
+                              '-x',
+                              'c++',
+                              '--driver-mode=g++',
+                              '-Wall' ),
             os.path.join( tmp_dir, 'test1.cc' )
           )
         )
@@ -1465,12 +1466,45 @@ class FlagsTest( TestCase ):
             os.path.join( tmp_dir, 'test.h' ),
             add_extra_clang_flags = False )[ 0 ],
           contains_exactly( 'clang++',
-                    '-x',
-                    'c++',
-                    '--driver-mode=g++',
-                    '-Wall',
-                    '-x',
-                    'c++-header' ) )
+                            '-x',
+                            'c++',
+                            '--driver-mode=g++',
+                            '-Wall',
+                            '-x',
+                            'c++-header' ) )
+
+
+  @UnixOnly
+  def test_CompilationDatabase_HeaderFile_SameNameAsSourceFile_ExtraClang(
+    self ):
+    with TemporaryTestDir() as tmp_dir:
+      compile_commands = [
+        {
+          'directory': tmp_dir,
+          'command': 'clang++ -x c++ -Wall',
+          'file': os.path.join( tmp_dir, 'test.cc' ),
+        },
+      ]
+
+      with patch( 'ycmd.completers.cpp.flags.OnMac', return_value=False ):
+        with TemporaryClangProject( tmp_dir, compile_commands ):
+          # If we ask for a header file with the same name as a source file, it
+          # returns the flags of that cc file (and a special language flag for
+          # C++ # headers). It also includes a trailing `--` flag which breaks
+          # our "add_extra_clang_flags", so test here that works correctly.
+          assert_that(
+            flags.Flags().FlagsForFile(
+              os.path.join( tmp_dir, 'test.h' ),
+              add_extra_clang_flags = True )[ 0 ],
+            contains_exactly( 'clang++',
+                              '-x',
+                              'c++',
+                              '--driver-mode=g++',
+                              '-Wall',
+                              '-x',
+                              'c++-header',
+                              matches_regexp( '-resource-dir=.*' ),
+                              '-fspell-checking' ) )
 
 
   def test_CompilationDatabase_HeaderFile_DifferentNameFromSourceFile( self ):
@@ -1492,12 +1526,12 @@ class FlagsTest( TestCase ):
             os.path.join( tmp_dir, 'not_in_the_db.h' ),
             add_extra_clang_flags = False )[ 0 ],
           contains_exactly( 'clang++',
-                    '-x',
-                    'c++',
-                    '--driver-mode=g++',
-                    '-Wall',
-                    '-x',
-                    'c++-header' ) )
+                            '-x',
+                            'c++',
+                            '--driver-mode=g++',
+                            '-Wall',
+                            '-x',
+                            'c++-header' ) )
 
 
   def test_CompilationDatabase_ExplicitHeaderFileEntry( self ):

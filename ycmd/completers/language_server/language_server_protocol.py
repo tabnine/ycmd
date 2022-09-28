@@ -137,6 +137,40 @@ SYMBOL_KIND = [
   'TypeParameter',
 ]
 
+TOKEN_TYPES = [
+  'namespace',
+  'type',
+  'class',
+  'enum',
+  'interface',
+  'struct',
+  'typeParameter',
+  'parameter',
+  'variable',
+  'property',
+  'enumMember',
+  'event',
+  'function',
+  'method',
+  'member',
+  'macro',
+  'keyword',
+  'modifier',
+  'comment',
+  'string',
+  'number',
+  'regexp',
+  'operator',
+]
+
+TOKEN_MODIFIERS = []
+
+INLAY_HINT_KIND = [
+  None,
+  "Type",
+  "Parameter"
+]
+
 
 class InvalidUriException( Exception ):
   """Raised when trying to convert a server URI to a file path but the scheme
@@ -274,7 +308,8 @@ def Initialize( request_id, project_directory, extra_capabilities, settings ):
         'symbolKind': {
           'valueSet': list( range( 1, len( SYMBOL_KIND ) ) ),
         }
-      }
+      },
+      'workspaceFolders': True,
     },
     'textDocument': {
       'codeAction': {
@@ -328,9 +363,23 @@ def Initialize( request_id, project_directory, extra_capabilities, settings ):
           ],
         },
       },
+      'semanticTokens': {
+        'requests': {
+          'range': True,
+          'full': {
+            'delta': False
+          }
+        },
+        'tokenTypes': TOKEN_TYPES,
+        'tokenModifiers': TOKEN_MODIFIERS,
+        'formats': [ 'relative' ],
+        'augmentSyntaxTokens': True,
+      },
       'synchronization': {
         'didSave': True
       },
+      'inlay_hint': {
+      }
     },
   }
   return BuildRequest( request_id, 'initialize', {
@@ -339,7 +388,17 @@ def Initialize( request_id, project_directory, extra_capabilities, settings ):
     'rootUri': FilePathToUri( project_directory ),
     'initializationOptions': settings,
     'capabilities': UpdateDict( capabilities, extra_capabilities ),
+    'workspaceFolders': WorkspaceFolders( project_directory ),
   } )
+
+
+def WorkspaceFolders( *args ):
+  return [
+    {
+      'uri': FilePathToUri( f ),
+      'name': os.path.basename( f )
+    } for f in args
+  ]
 
 
 def Initialized():
@@ -445,9 +504,7 @@ def DidCloseTextDocument( file_state ):
 
 def Completion( request_id, request_data, codepoint ):
   return BuildRequest( request_id, 'textDocument/completion', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'position': Position( request_data[ 'line_num' ],
                           request_data[ 'line_value' ],
                           codepoint ),
@@ -497,9 +554,7 @@ def Implementation( request_id, request_data ):
 
 def CodeAction( request_id, request_data, best_match_range, diagnostics ):
   return BuildRequest( request_id, 'textDocument/codeAction', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'range': best_match_range,
     'context': {
       'diagnostics': diagnostics,
@@ -509,9 +564,7 @@ def CodeAction( request_id, request_data, best_match_range, diagnostics ):
 
 def Rename( request_id, request_data, new_name ):
   return BuildRequest( request_id, 'textDocument/rename', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'newName': new_name,
     'position': Position( request_data[ 'line_num' ],
                           request_data[ 'line_value' ],
@@ -533,11 +586,15 @@ def DocumentSymbol( request_id, request_data ):
   } )
 
 
+def TextDocumentIdentifier( request_data ):
+  return {
+    'uri': FilePathToUri( request_data[ 'filepath' ] ),
+  }
+
+
 def BuildTextDocumentPositionParams( request_data ):
   return {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'position': Position( request_data[ 'line_num' ],
                           request_data[ 'line_value' ],
                           request_data[ 'column_codepoint' ] )
@@ -577,18 +634,14 @@ def CallHierarchy( request_id, direction, item ):
 
 def Formatting( request_id, request_data ):
   return BuildRequest( request_id, 'textDocument/formatting', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'options': FormattingOptions( request_data )
   } )
 
 
 def RangeFormatting( request_id, request_data ):
   return BuildRequest( request_id, 'textDocument/rangeFormatting', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'range': Range( request_data ),
     'options': FormattingOptions( request_data )
   } )
@@ -649,6 +702,26 @@ def ExecuteCommand( request_id, command, arguments ):
   return BuildRequest( request_id, 'workspace/executeCommand', {
     'command': command,
     'arguments': arguments
+  } )
+
+
+def SemanticTokens( request_id, range_supported, request_data ):
+  if 'range' in request_data and range_supported:
+    return BuildRequest( request_id, 'textDocument/semanticTokens/range', {
+      'textDocument': TextDocumentIdentifier( request_data ),
+      'range': Range( request_data )
+    } )
+  else:
+    return BuildRequest( request_id, 'textDocument/semanticTokens/full', {
+      'textDocument': TextDocumentIdentifier( request_data ),
+    } )
+
+
+def InlayHints( request_id, request_data ):
+  # range is mandatory
+  return BuildRequest( request_id, 'textDocument/inlayHint', {
+    'textDocument': TextDocumentIdentifier( request_data ),
+    'range': Range( request_data )
   } )
 
 
